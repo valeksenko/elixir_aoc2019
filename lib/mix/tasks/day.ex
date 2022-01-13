@@ -1,14 +1,14 @@
 defmodule Mix.Tasks.Day do
   use Mix.Task
 
-  @notrim ~w[4 6]
-  @nosplit ~w[16 19 20 22]
+  @notrim ~w[]
+  @nosplit ~w[]
 
   @shortdoc "Run a spefic day with its input"
 
   def run([day, part]) do
     module =
-      Module.safe_concat(~w[ Elixir AoC2020 Day#{String.pad_leading(day, 2, "0")} Part#{part} ])
+      Module.safe_concat(~w[ Elixir AoC2019 Day#{String.pad_leading(day, 2, "0")} Part#{part} ])
 
     file =
       ["_#{part}", ""]

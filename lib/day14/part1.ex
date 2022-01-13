@@ -11,22 +11,35 @@ defmodule AoC2019.Day14.Part1 do
     data
     |> parse_reactions()
     |> to_map()
-    |> ore(1, @fuel, %{})
+    |> collect(1, @fuel, %{})
+    |> IO.inspect
+    |> elem(0)
   end
 
-  def ore(_, amount, @ore, _), do: {@ore, amount}
+  def collect(_, amount, @ore, collected), do: {amount, put(collected, @ore, amount)}
 
-  def ore(reactions, amount, chemical, collected) do
+  def collect(reactions, amount, chemical, collected) do
     {count, chemicals} = Map.get(reactions, chemical)
+    present = Map.get(collected, chemical, 0)
 
-    total =
-      chemicals
-      |> Enum.map(fn {a, c} -> ore(reactions, a, c, collected) end)
-      |> Enum.sum()
+    if present >= amount do
+      {0, take(collected, chemical, amount)}
+    else
+      multiplier = ceil((amount - present) / count)
 
-    IO.inspect({chemical, amount, count, total, total * ceil(amount / count)})
-    total * ceil(amount / count)
+      {ore, latest} = Enum.reduce(chemicals, {0, collected}, &get_chemical(reactions, multiplier, &1, &2))
+      {ore, put(latest, chemical, count * multiplier)}
+    end
   end
+
+  defp get_chemical(reactions, multiplier, {amount, chemical}, {ore, collected}) do
+    {o, c} = collect(reactions, multiplier * amount, chemical, collected)
+    {o + ore, take(c, chemical, multiplier * amount)}
+  end
+
+  def take(collected, chemical, amount), do: collected |> Map.update!(chemical, &(&1 - amount))
+
+  def put(collected, chemical, amount), do: collected |> Map.update(chemical, amount, &(&1 + amount))
 
   defp to_map(reactions) do
     reactions
