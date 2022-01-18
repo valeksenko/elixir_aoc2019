@@ -11,35 +11,34 @@ defmodule AoC2019.Day14.Part1 do
     data
     |> parse_reactions()
     |> to_map()
-    |> collect(1, @fuel, %{})
-    |> IO.inspect
-    |> elem(0)
+    |> collect(0, [{1, @fuel}], %{})
   end
 
-  def collect(_, amount, @ore, collected), do: {amount, put(collected, @ore, amount)}
+  def collect(_, ore, [], _), do: ore
 
-  def collect(reactions, amount, chemical, collected) do
+  def collect(reactions, ore, [{amount, @ore} | needed], leftovers),
+    do: collect(reactions, ore + amount, needed, leftovers)
+
+  def collect(reactions, ore, [{amount, chemical} | needed], leftovers) do
     {count, chemicals} = Map.get(reactions, chemical)
-    present = Map.get(collected, chemical, 0)
+    present = Map.get(leftovers, chemical, 0)
 
     if present >= amount do
-      {0, take(collected, chemical, amount)}
+      collect(reactions, ore, needed, take(leftovers, chemical, amount))
     else
-      multiplier = ceil((amount - present) / count)
+      required = amount - present
+      batch = ceil(required / count)
 
-      {ore, latest} = Enum.reduce(chemicals, {0, collected}, &get_chemical(reactions, multiplier, &1, &2))
-      {ore, put(latest, chemical, count * multiplier)}
+      collect(
+        reactions,
+        ore,
+        Enum.reduce(chemicals, needed, fn {a, c}, n -> [{a * batch, c} | n] end),
+        Map.put(leftovers, chemical, count * batch - required)
+      )
     end
   end
 
-  defp get_chemical(reactions, multiplier, {amount, chemical}, {ore, collected}) do
-    {o, c} = collect(reactions, multiplier * amount, chemical, collected)
-    {o + ore, take(c, chemical, multiplier * amount)}
-  end
-
-  def take(collected, chemical, amount), do: collected |> Map.update!(chemical, &(&1 - amount))
-
-  def put(collected, chemical, amount), do: collected |> Map.update(chemical, amount, &(&1 + amount))
+  def take(leftovers, chemical, amount), do: leftovers |> Map.update!(chemical, &(&1 - amount))
 
   defp to_map(reactions) do
     reactions
